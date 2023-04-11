@@ -29,14 +29,14 @@ craft install/plugin _staticcache
 ### Create static cache
 
 ```bash
-craft staticcache/create
-craft staticcache/create --dryRun=1
+craft _staticcache/create
+craft _staticcache/create --dryRun=1
 ```
 
 ### Clear static cache
 
 ```bash
-craft staticcache/clear
+craft _staticcache/clear
 ```
 
 ## Configuration
