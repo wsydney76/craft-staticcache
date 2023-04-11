@@ -1,0 +1,31 @@
+{
+    "name": "wsydney76/craft-staticcache",
+    "description": "Create static cache",
+    "type": "craft-plugin",
+    "require": {
+        "php": ">=8.0.2",
+        "craftcms/cms": "^4.4.6.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "wsydney76\\staticcache\\": "src/"
+        }
+    },
+    "extra": {
+        "handle": "_staticcache",
+        "name": "Staticcache",
+        "developer": "wsydney76",
+        "documentationUrl": ""
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.0.2"
+        },
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true,
+            "craftcms/plugin-installer": true
+        }
+    }
+}
+
