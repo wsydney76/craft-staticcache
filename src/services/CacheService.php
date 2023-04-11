@@ -15,8 +15,10 @@ use function ceil;
 use function file_exists;
 use function file_put_contents;
 use function fnmatch;
+use function func_get_args;
 use function is_dir;
 use function parse_url;
+use function preg_replace;
 use function str_replace;
 use const PHP_URL_HOST;
 
@@ -59,6 +61,7 @@ class CacheService extends Component
 
         $entries = Entry::find()
             ->uri(':notempty:')
+            ->site('*')
             ->collect();
 
         $count = $entries->count();
@@ -67,7 +70,6 @@ class CacheService extends Component
         foreach ($entries as $i => $entry) {
             $this->cacheEntry($entry, $i, $count, $errors);
         }
-
 
         $this->createPagination();
 
@@ -145,18 +147,7 @@ class CacheService extends Component
         $this->init();
 
         if ($message) {
-            Console::output($message);
-        }
-
-        $cacheRoot = App::parseEnv(Plugin::getInstance()->getSettings()->cacheRoot);
-
-        $cacheRoot = $this->webRoot . '/' . $cacheRoot . '/' . parse_url($url, PHP_URL_HOST);
-
-        $path = $cacheRoot . '/' . $uri;
-
-        // delete existing file
-        if (file_exists($path . '/index.html')) {
-            unlink($path . '/index.html');
+            Console::stdout($message);
         }
 
         try {
@@ -180,15 +171,32 @@ class CacheService extends Component
             return;
         }
 
+        // e.g. 'cache/blitz'
+        $cacheRootFolder = App::parseEnv(Plugin::getInstance()->getSettings()->cacheRoot);
+
+        // the site specific folder, e.g, 'craft1.ddev.site/de'
+        $siteUrl = Craft::getAlias($site->getBaseUrl());
+
+        // strip schema
+        $siteHostPath = preg_replace('/^(http|https):\/\//i', '', $siteUrl);
+
+        // strip port numbers
+        $siteHostPath = preg_replace('/:[0-9]*/i', '', $siteHostPath);
+
+
+        // Compose full path for cache file
+        $cacheFilePath = $this->webRoot . '/' . $cacheRootFolder . '/' . $siteHostPath . '/' . $uri;
 
         // remove __home__ from path
-        $path = str_replace('__home__', '', $path);
+        $cacheFilePath = str_replace('__home__', '', $cacheFilePath);
 
-        if (!is_dir($path)) {
-            FileHelper::createDirectory($path, 0777, true);
+
+        if (!is_dir($cacheFilePath)) {
+            FileHelper::createDirectory($cacheFilePath, 0777, true);
         }
 
         // write html to file
-        file_put_contents($path . '/index.html', $html);
+        file_put_contents($cacheFilePath . '/index.html', $html);
     }
+
 }

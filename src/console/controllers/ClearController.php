@@ -8,6 +8,7 @@ namespace wsydney76\staticcache\console\controllers;
 use Craft;
 use craft\console\Controller;
 use craft\helpers\App;
+use craft\helpers\Console;
 use modules\main\helpers\FileHelper;
 use wsydney76\staticcache\Plugin;
 use yii\console\ExitCode;
@@ -43,6 +44,18 @@ class ClearController extends Controller
         $cacheRoot = Craft::getAlias('@webroot') . '/' . App::parseEnv(Plugin::getInstance()->getSettings()->cacheRoot);
 
         FileHelper::removeDirectory($cacheRoot);
+        return ExitCode::OK;
+    }
+
+    public function actionTest(): int
+    {
+        $siteUrl = 'http://194.0.68.14:57003';
+        $siteHostPath = preg_replace('/^(http|https):\/\//i', '', $siteUrl);
+        $siteHostPath = preg_replace('/:[0-9]*/i', '', $siteHostPath);
+        $siteHostPath = str_replace(':', '', $siteHostPath);
+
+       Console::output( $siteUrl . ' => ' .$siteHostPath);
+
         return ExitCode::OK;
     }
 }

@@ -3,16 +3,11 @@
 namespace wsydney76\staticcache;
 
 use Craft;
-use craft\base\Element;
 use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
-use craft\elements\Entry;
-use craft\events\ModelEvent;
 use craft\helpers\Cp;
-use craft\helpers\ElementHelper;
 use wsydney76\staticcache\models\Settings;
 use wsydney76\staticcache\services\CacheService;
-use yii\base\Event;
 
 /**
  * Staticcache plugin
