@@ -10,7 +10,10 @@ use craft\helpers\Console;
 use craft\models\Site;
 use GuzzleHttp\Exception\GuzzleException;
 use modules\main\helpers\FileHelper;
+use wsydney76\staticcache\events\ProgressEvent;
 use wsydney76\staticcache\Plugin;
+use wsydney76\staticcache\services\CacheService;
+use yii\base\Event;
 use yii\console\ExitCode;
 use function fnmatch;
 use function is_dir;
@@ -57,7 +60,7 @@ class CreateController extends Controller
 
         // exit if caching is disabled
         if (!Plugin::getInstance()->getSettings()->cachingEnabled) {
-            $this->stdout('Caching is disabled.' . PHP_EOL);
+            Console::output('Caching is disabled.');
             return ExitCode::OK;
         }
 
@@ -65,12 +68,20 @@ class CreateController extends Controller
             return ExitCode::OK;
         }
 
-        Plugin::getInstance()->cacheService->createCache([
+        $service = Plugin::getInstance()->cacheService;
+
+        $service->on(CacheService::EVENT_PROGRESS, function (ProgressEvent $event) {
+            Console::updateProgress($event->done,  $event->total, "Generating cache files ");
+        });
+
+        $service->createCache([
             'dryrun' => $this->dryrun,
             'debug' => $this->debug,
         ]);
 
-        Console::output('Done');
+        $service->off(CacheService::EVENT_PROGRESS);
+
+        Console::endProgress();
 
         return ExitCode::OK;
     }

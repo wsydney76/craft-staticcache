@@ -10,7 +10,7 @@ Otherwise, you should use a more sophisticated caching solution, like the Blitz 
 
 As a bonus, missing image transforms will be created. Use the `--dryRun=1` option to create transforms without creating cache files.
 
-Beta quality, use at your own risk.
+Beta quality (at best...), use at your own risk.
 
 ## Requirements
 
@@ -38,6 +38,12 @@ craft _staticcache/create --dryRun=1
 ```bash
 craft _staticcache/clear
 ```
+
+## CP Utility
+
+Use the Static cache utility to clear/create the cache. 
+
+Be aware that creating a large number of cache files via a web request may be problematic, although it is done in a queue job.
 
 ## Configuration
 
@@ -71,11 +77,25 @@ Blitz compatible, go to the plugins setting page if you want to use a different 
 
 return [
     // Exclude pages from cache with site specific regex
+    // Add all pages with forms that require a fresh CSRF token
     'exclude' => [
         'de' => [
-            '*members*',
+            '*kontakt*',
         ],
+        'en' => [
+            '*contact*',
+        ],
+
     ],
+    
+    // Include non-entry pages
+    'include' => [
+        [
+            'url' => 'https://staticcache-dev.ddev.site/en/test/cache', 
+            'uri' => 'test/cache', 
+            'site' => 'en'
+        ]
+    ],    
 
     // Create additional pages for pagination
     'paginate' => [

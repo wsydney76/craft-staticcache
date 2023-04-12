@@ -41,9 +41,8 @@ class ClearController extends Controller
             return ExitCode::OK;
         }
 
-        $cacheRoot = Craft::getAlias('@webroot') . '/' . App::parseEnv(Plugin::getInstance()->getSettings()->cacheRoot);
+        Plugin::getInstance()->cacheService->clearCache();
 
-        FileHelper::removeDirectory($cacheRoot);
         return ExitCode::OK;
     }
 

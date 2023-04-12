@@ -1,0 +1,42 @@
+{% import '_includes/forms.twig' as forms %}
+
+{% if settings.cachingEnabled %}
+    <h2>Clear Cache</h2>
+
+    <p>
+        All existing cache files will be deleted.
+    </p>
+
+    <form method="post">
+
+        {{ csrfInput() }}
+        {{ actionInput('_staticcache/cache/clear') }}
+        
+        {{ forms.submitButton({
+            label: 'Clear Cache'
+        }) }}
+        
+    </form>
+
+    <h2 style="margin-top: 48px">Create Cache</h2>
+
+    <p>
+        All cache files will be created via a background job.
+    </p>
+
+    <form method="post">
+
+        {{ csrfInput() }}
+        {{ actionInput('_staticcache/cache/create') }}
+
+        {{ forms.submitButton({
+            label: 'Create Cache'
+        }) }}
+
+    </form>
+    
+{% else %}
+    <p>
+        Caching is disabled.
+    </p>
+{% endif %}

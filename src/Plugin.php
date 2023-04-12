@@ -5,9 +5,13 @@ namespace wsydney76\staticcache;
 use Craft;
 use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
+use craft\events\RegisterComponentTypesEvent;
 use craft\helpers\Cp;
+use craft\services\Utilities;
 use wsydney76\staticcache\models\Settings;
 use wsydney76\staticcache\services\CacheService;
+use wsydney76\staticcache\utilities\StaticcacheUtility;
+use yii\base\Event;
 
 /**
  * Staticcache plugin
@@ -42,6 +46,9 @@ class Plugin extends BasePlugin
     private function attachEventHandlers(): void
     {
         // ...
+        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITY_TYPES, function (RegisterComponentTypesEvent $event) {
+            $event->types[] = StaticcacheUtility::class;
+        });
     }
 
     protected function createSettingsModel(): ?Model
