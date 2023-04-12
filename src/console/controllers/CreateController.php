@@ -24,29 +24,33 @@ class CreateController extends Controller
 {
     public $defaultAction = 'index';
 
-    public $dryRun = 0;
+    /**
+     * @var bool If set to 1, the cache will not be created.
+     */
+    public $dryrun = 0;
 
+    /**
+     * @var bool If set to 1, the cache will be created with debug mode enabled (devMode only).
+     */
+    public $debug = false;
 
-    private $client;
-    private $errors = 0;
-    private $webRoot;
-
-    private $config;
 
     public function options($actionID): array
     {
         $options = parent::options($actionID);
         switch ($actionID) {
             case 'index':
-                $options[] = 'dryRun';
+                $options[] = 'dryrun';
+                $options[] = 'debug';
                 break;
         }
         return $options;
     }
 
     /**
-     * staticcache/create command
-     * ddev craft _staticcache/create
+     * Creates a static cache for all published entries.
+     *
+     * @return int
      */
     public function actionIndex(): int
     {
@@ -61,10 +65,12 @@ class CreateController extends Controller
             return ExitCode::OK;
         }
 
-        $errors = Plugin::getInstance()->cacheService->createCache($this->dryRun);
+        Plugin::getInstance()->cacheService->createCache([
+            'dryrun' => $this->dryrun,
+            'debug' => $this->debug,
+        ]);
 
-        // Output message with error count
-        $this->stdout('Done, errors: ' . $errors . PHP_EOL);
+        Console::output('Done');
 
         return ExitCode::OK;
     }

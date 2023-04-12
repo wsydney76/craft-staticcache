@@ -33,28 +33,51 @@ class CacheService extends Component
 
     private $config;
 
-    public bool $dryRun = false;
+    public bool $dryrun = false;
+    public bool $debug = false;
 
     private bool $isInitialized = false;
 
-    public function init($dryRun = false)
+    private array $cacheTasks = [];
+
+    private array $siteHostPaths = [];
+    private string $cacheRootFolder = '';
+
+    public function initService(array $options)
     {
         if ($this->isInitialized) {
             return;
         }
 
-        $this->dryRun = $dryRun;
+        $this->dryrun = $options['dryrun'] ?? false;
+        $this->debug = $options['debug'] ?? false;
         $this->webRoot = App::parseEnv(Craft::getAlias('@webroot'));
         $this->config = Craft::$app->getConfig()->getConfigFromFile('staticcache-rules');
         $this->client = Craft::createGuzzleClient();
 
+        // e.g. 'cache/blitz'
+        $this->cacheRootFolder = App::parseEnv(Plugin::getInstance()->getSettings()->cacheRoot);
+
+        foreach (Craft::$app->sites->getAllSites() as $site) {
+            $siteUrl = App::parseEnv($site->baseUrl);
+
+            // strip schema
+            $siteHostPath = preg_replace('/^(http|https):\/\//i', '', $siteUrl);
+            // strip port numbers
+            $siteHostPath = preg_replace('/:[0-9]*/i', '', $siteHostPath);
+
+            $this->siteHostPaths[$site->handle] = $siteHostPath;
+        }
+
+
+
         $this->isInitialized = true;
     }
 
-    public function createCache($dryRun = false): int
+    public function createCache(array $options): int
     {
 
-        $this->init($dryRun);
+        $this->initService($options);
 
         Craft::$app->runAction('_staticcache/clear', ['interactive' => false]);
 
@@ -73,13 +96,13 @@ class CacheService extends Component
 
         $this->createPagination();
 
+        $this->createFiles();
+
         return $this->errors;
     }
 
-    public function cacheEntry(mixed $entry, $i = null, int $count = 0)
+    public function cacheEntry(mixed $entry)
     {
-        $this->init();
-
         $excludes = $this->config['exclude'][$entry->site->handle] ?? [];
 
         // continue if entry url matches exclude pattern
@@ -89,17 +112,11 @@ class CacheService extends Component
             }
         }
 
-        if ($count) {
-            Console::updateProgress($i, $count, "Generating entries cache");
-        }
-
-        $this->createFile($entry->url, $entry->uri, $entry->site);
+        $this->addTask($entry->url, $entry->uri, Craft::getAlias($entry->site->handle));
     }
 
     public function createPagination()
     {
-        $this->init();
-
         $config = $this->config;
 
         if (!isset($config['paginate'])) {
@@ -134,61 +151,53 @@ class CacheService extends Component
                     $pageUri = $uri . '/' . Craft::$app->config->general->pageTrigger . $i;
                     $pageUrl = $baseUrl . $pageUri;
 
-                    $this->createFile($pageUrl, $pageUri, $site, "Creating pagination page: $siteHandle - $pageUri - $i");
+                    $this->addTask($pageUrl, $pageUri, $site->handle);
                 }
             }
         }
     }
 
+    public function addTask(string $url, string $uri, string $siteHandle): void
+    {
+        $this->cacheTasks[] = [
+            'url' => $url,
+            'uri' => $uri,
+            'site' => $siteHandle,
+        ];
+    }
 
-    public function createFile(string $url, string $uri, Site $site, string $message = ''): void
+    public function createFiles()
+    {
+        $count = count($this->cacheTasks);
+        foreach ($this->cacheTasks as $i => $task) {
+
+            Console::updateProgress($i + 1, $count, "Generating cache files ");
+
+            $this->createFile($task['url'], $task['uri'], $task['site']);
+        }
+    }
+
+    public function createFile(string $url, string $uri, string $siteUrl): void
     {
 
         $this->init();
 
-        if ($message) {
-            Console::stdout($message);
-        }
-
         try {
             $html = $this->client->get($url)->getBody()->getContents();
         } catch (GuzzleException $e) {
-            // output error
-            Console::error($e->getMessage());
             $this->errors++;
             // log error with url
-            Craft::error($e->getMessage() . ' - ' . $url, __METHOD__);
+            Craft::error($e->getMessage() . ' - ' . $url, 'staticcache');
 
             return;
         }
 
-        // Output site name, section name, title to console
-        if ($message) {
-            Console::output(' Done.');
-        }
 
-        if ($this->dryRun) {
+        if ($this->dryrun) {
             return;
         }
 
-        // e.g. 'cache/blitz'
-        $cacheRootFolder = App::parseEnv(Plugin::getInstance()->getSettings()->cacheRoot);
-
-        // the site specific folder, e.g, 'craft1.ddev.site/de'
-        $siteUrl = Craft::getAlias($site->getBaseUrl());
-
-        // strip schema
-        $siteHostPath = preg_replace('/^(http|https):\/\//i', '', $siteUrl);
-
-        // strip port numbers
-        $siteHostPath = preg_replace('/:[0-9]*/i', '', $siteHostPath);
-
-
-        // Compose full path for cache file
-        $cacheFilePath = $this->webRoot . '/' . $cacheRootFolder . '/' . $siteHostPath . '/' . $uri;
-
-        // remove __home__ from path
-        $cacheFilePath = str_replace('__home__', '', $cacheFilePath);
+        $cacheFilePath = $this->getCacheFilePath($uri, $siteUrl);
 
 
         if (!is_dir($cacheFilePath)) {
@@ -197,6 +206,22 @@ class CacheService extends Component
 
         // write html to file
         file_put_contents($cacheFilePath . '/index.html', $html);
+
+        if ($this->debug) {
+            Craft::info('Caching ' . $url, 'staticcache');
+        }
+    }
+
+    private function getCacheFilePath(string $uri, string $site): string
+    {
+
+        $siteHostPath = $this->siteHostPaths[$site];
+
+        // Compose full path for cache file
+        $cacheFilePath = $this->webRoot . '/' . $this->cacheRootFolder . '/' . $siteHostPath . '/' . $uri;
+
+        // remove __home__ from path
+        return str_replace('__home__', '', $cacheFilePath);
     }
 
 }
