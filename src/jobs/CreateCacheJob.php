@@ -2,6 +2,7 @@
 
 namespace wsydney76\staticcache\jobs;
 
+use Craft;
 use craft\queue\BaseJob;
 use wsydney76\staticcache\events\ProgressEvent;
 use wsydney76\staticcache\Plugin;
@@ -27,6 +28,6 @@ class CreateCacheJob extends BaseJob
 
     protected function defaultDescription(): ?string
     {
-        return 'Create Cache';
+        return Craft::t('_staticcache', 'Creating static cache');
     }
 }

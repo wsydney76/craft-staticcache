@@ -35,6 +35,8 @@ class CacheService extends Component
     // The root cache folder within the webroot
     private string $cacheRootFolder = '';
 
+    private string $cacheRootPath = '';
+
     // The site speficic cache folders within the root cache folder
     private array $siteHostPaths = [];
 
@@ -57,7 +59,7 @@ class CacheService extends Component
     private array $cacheTasks = [];
 
 
-    public function initService(array $options)
+    public function initService(array $options = []): void
     {
 
         $this->dryrun = $options['dryrun'] ?? false;
@@ -66,6 +68,8 @@ class CacheService extends Component
         $this->webRoot = App::parseEnv(Craft::getAlias('@webroot'));
         // e.g. 'cache/blitz'
         $this->cacheRootFolder = App::parseEnv(Plugin::getInstance()->getSettings()->cacheRoot);
+
+        $this->cacheRootPath = $this->webRoot . '/' . $this->cacheRootFolder;
 
         foreach (Craft::$app->sites->getAllSites() as $site) {
             $siteUrl = App::parseEnv($site->baseUrl);
@@ -253,9 +257,42 @@ class CacheService extends Component
      */
     public function clearCache(): void
     {
-        $cacheRoot = Craft::getAlias('@webroot') . '/' . App::parseEnv(Plugin::getInstance()->getSettings()->cacheRoot);
+        $this->initService();
 
-        FileHelper::removeDirectory($cacheRoot);
+        if (!is_dir($this->cacheRootPath)) {
+            return;
+        }
+
+        FileHelper::removeDirectory($this->cacheRootPath);
+    }
+
+    public function getCacheFileCount(): int
+    {
+        $this->initService();
+        return $this->countFiles($this->cacheRootPath);
+    }
+
+
+    private function countFiles($dir): int
+    {
+
+        if (!is_dir($dir)) {
+            return 0;
+        }
+
+        $count = 0;
+
+        $files = scandir($dir);
+        foreach ($files as $file) {
+            if ($file !== '.' && $file !== '..') {
+                if (is_file($dir . '/' . $file)) {
+                    $count++;
+                } else if (is_dir($dir . '/' . $file)) {
+                    $count += $this->countFiles($dir . '/' . $file);
+                }
+            }
+        }
+        return $count;
     }
 
 }

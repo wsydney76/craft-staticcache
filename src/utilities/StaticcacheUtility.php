@@ -31,6 +31,7 @@ class StaticcacheUtility extends Utility
     {
         return Craft::$app->getView()->renderTemplate('_staticcache/utility', [
             'settings' => Plugin::getInstance()->getSettings(),
+            'fileCount' => Plugin::getInstance()->cacheService->getCacheFileCount(),
         ]);
     }
 }

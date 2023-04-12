@@ -1,27 +1,31 @@
 {% import '_includes/forms.twig' as forms %}
 
+<p>
+    {{ 'Currently cached'|t('_staticcache') }}: {{ fileCount }} {{ 'pages'|t('_staticcache') }}.
+</p>
+
+<h2>{{ 'Clear Cache'|t('_staticcache') }}</h2>
+
+<p>
+    {{ 'All existing cache files will be deleted.'|t('_staticcache') }}
+</p>
+
+<form method="post">
+
+    {{ csrfInput() }}
+    {{ actionInput('_staticcache/cache/clear') }}
+
+    {{ forms.submitButton({
+        label: 'Clear Cache'|t('_staticcache')
+    }) }}
+
+</form>
+
 {% if settings.cachingEnabled %}
-    <h2>Clear Cache</h2>
+    <h2 style="margin-top: 48px">{{ 'Create Cache'|t('_staticcache') }}</h2>
 
     <p>
-        All existing cache files will be deleted.
-    </p>
-
-    <form method="post">
-
-        {{ csrfInput() }}
-        {{ actionInput('_staticcache/cache/clear') }}
-        
-        {{ forms.submitButton({
-            label: 'Clear Cache'
-        }) }}
-        
-    </form>
-
-    <h2 style="margin-top: 48px">Create Cache</h2>
-
-    <p>
-        All cache files will be created via a background job.
+        {{ 'All cache files will be created via a background job.'|t('_staticcache') }}
     </p>
 
     <form method="post">
@@ -30,13 +34,13 @@
         {{ actionInput('_staticcache/cache/create') }}
 
         {{ forms.submitButton({
-            label: 'Create Cache'
+            label: 'Create Cache'|t('_staticcache')
         }) }}
 
     </form>
-    
+
 {% else %}
     <p>
-        Caching is disabled.
+        {{ 'Caching is disabled.'|t('_staticcache') }}
     </p>
 {% endif %}

@@ -60,21 +60,21 @@ class Plugin extends BasePlugin
     {
         return
             Cp::lightswitchFieldHtml([
-                'label' => 'Caching enabled',
+                'label' => Craft::t('_staticcache', 'Caching enabled'),
                 'name' => 'cachingEnabled',
                 'on' => $this->getSettings()->cachingEnabled,
-                'instructions' => 'Enable or disable caching.',
+                'instructions' => Craft::t('_staticcache', 'Enable or disable caching.'),
                 'errors' => $this->getSettings()->getErrors('cachingEnabled'),
             ]) .
 
             Cp::autosuggestFieldHtml([
                 'first' => true,
-                'label' => 'Cache root',
+                'label' => Craft::t('_staticcache', 'Cache root'),
                 'name' => 'cacheRoot',
                 'value' => $this->getSettings()->cacheRoot,
                 'suggestEnvVars' => true,
-                'instructions' => 'Folder within the web directory where to store the cached html files. Without leading or trailing slashes.',
-                'warning' => 'This must match your web server configuration.',
+                'instructions' => Craft::t('_staticcache', 'Folder within the web directory where to store the cached html files. Without leading or trailing slashes.'),
+                'warning' => Craft::t('_staticcache', 'This must match your web server configuration. You may have to manually delete existing files after changing this setting.'),
                 'errors' => $this->getSettings()->getErrors('cacheRoot'),
             ]);
     }
