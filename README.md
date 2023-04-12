@@ -4,6 +4,8 @@ Creates static cache of all entry pages in your Craft CMS website.
 
 Caching in its simplest form, all or nothing. No cache invalidation, just rebuild the whole cache.
 
+Exception: If you save an entry, the cache for that entry will be updated, if the `updateCacheOnSave` setting is enabled.
+
 Can be used for sites with a small number of pages, that are not updated so often.
 
 Otherwise, you should use a more sophisticated caching solution, like the Blitz plugin.

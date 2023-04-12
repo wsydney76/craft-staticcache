@@ -3,11 +3,16 @@
 namespace wsydney76\staticcache;
 
 use Craft;
+use craft\base\Element;
 use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
+use craft\elements\Entry;
+use craft\events\ModelEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\helpers\Cp;
+use craft\helpers\ElementHelper;
 use craft\services\Utilities;
+use wsydney76\staticcache\jobs\UpdateEntryJob;
 use wsydney76\staticcache\models\Settings;
 use wsydney76\staticcache\services\CacheService;
 use wsydney76\staticcache\utilities\StaticcacheUtility;
@@ -46,17 +51,41 @@ class Plugin extends BasePlugin
     private function attachEventHandlers(): void
     {
         // ...
-        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITY_TYPES, function (RegisterComponentTypesEvent $event) {
+        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITY_TYPES, function(RegisterComponentTypesEvent $event) {
             $event->types[] = StaticcacheUtility::class;
+        });
+
+        Event::on(Entry::class, Entry::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+            /** @var Entry $entry */
+
+            if (!$this->getSettings()->cachingEnabled || !$this->getSettings()->updateCacheOnSave) {
+                return;
+            }
+
+            $entry = $event->sender;
+
+            if (ElementHelper::isDraftOrRevision($entry)) {
+                return;
+            }
+
+            if (!$entry->scenario === Element::SCENARIO_LIVE) {
+                return;
+            }
+
+            Craft::$app->getQueue()->push(new UpdateEntryJob([
+                'id' => $entry->id,
+            ]));
         });
     }
 
-    protected function createSettingsModel(): ?Model
+    protected
+    function createSettingsModel(): ?Model
     {
         return new Settings();
     }
 
-    protected function settingsHtml(): ?string
+    protected
+    function settingsHtml(): ?string
     {
         return
             Cp::lightswitchFieldHtml([
@@ -65,6 +94,14 @@ class Plugin extends BasePlugin
                 'on' => $this->getSettings()->cachingEnabled,
                 'instructions' => Craft::t('_staticcache', 'Enable or disable caching.'),
                 'errors' => $this->getSettings()->getErrors('cachingEnabled'),
+            ]) .
+
+            Cp::lightswitchFieldHtml([
+                'label' => Craft::t('_staticcache', 'Update cache on save'),
+                'name' => 'updateCacheOnSave',
+                'on' => $this->getSettings()->updateCacheOnSave,
+                'instructions' => Craft::t('_staticcache', 'Update the cache when an entry is saved.'),
+                'errors' => $this->getSettings()->getErrors('updateCacheOnSave'),
             ]) .
 
             Cp::autosuggestFieldHtml([
@@ -78,5 +115,4 @@ class Plugin extends BasePlugin
                 'errors' => $this->getSettings()->getErrors('cacheRoot'),
             ]);
     }
-
 }

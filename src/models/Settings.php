@@ -14,6 +14,8 @@ class Settings extends Model
     public bool $cachingEnabled = true;
     public string $cacheRoot = 'cache/blitz';
 
+    public bool $updateCacheOnSave = true;
+
     protected function defineRules(): array
     {
         return array_merge(parent::defineRules(), [

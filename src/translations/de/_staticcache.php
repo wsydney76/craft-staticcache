@@ -18,4 +18,7 @@ return [
     'Creating static cache' => 'Statischen Cache erstellen',
     'Cache cleared' => 'Cache geleert',
     'Cache creation queued' => 'Cache-Erstellung in die Warteschlange eingereiht.',
+    'Update the cache when an entry is saved.' => 'Den Cache aktualisieren, wenn ein Eintrag gespeichert wird.',
+    'Updating entry cache' => 'Eintrags-Cache aktualisieren',
+    'Update cache on save' => 'Cache beim Speichern aktualisieren',
 ];

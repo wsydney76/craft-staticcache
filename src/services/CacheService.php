@@ -59,8 +59,15 @@ class CacheService extends Component
     private array $cacheTasks = [];
 
 
+    private bool $isInitialized = false;
+
+
     public function initService(array $options = []): void
     {
+
+        if ($this->isInitialized) {
+            return;
+        }
 
         $this->dryrun = $options['dryrun'] ?? false;
         $this->debug = $options['debug'] ?? false;
@@ -108,6 +115,8 @@ class CacheService extends Component
 
     public function createEntryTasks(): void
     {
+        $this->initService();
+
         $entries = Entry::find()
             ->uri(':notempty:')
             ->site('*')
@@ -209,6 +218,8 @@ class CacheService extends Component
 
     public function createFile(string $uri, string $site): void
     {
+
+        $this->initService();
 
         $url = $this->siteBaseUrls[$site] . $uri;
 
