@@ -84,7 +84,6 @@ class CacheService extends Component
         $this->excludes = $this->config['exclude'] ?? [];
 
         $this->client = Craft::createGuzzleClient();
-
     }
 
     public function createCache(array $options = []): void
@@ -101,7 +100,6 @@ class CacheService extends Component
         $this->clearCache();
 
         $this->createFiles();
-
     }
 
     public function createEntryTasks(): void
@@ -127,7 +125,7 @@ class CacheService extends Component
             }
         }
 
-        $this->addTask($entry->url, Craft::getAlias($entry->site->handle));
+        $this->addTask($entry->uri, $entry->site->handle);
     }
 
     public function createPaginationTasks(): void
@@ -146,8 +144,6 @@ class CacheService extends Component
                     continue;
                 }
 
-                $baseUrl = $site->baseUrl;
-
                 $query = Entry::find()->site($siteHandle);
                 Craft::configure($query, $paginatePages['criteria']);
 
@@ -164,9 +160,8 @@ class CacheService extends Component
                 for ($i = 2; $i <= $additionalPages + 1; $i++) {
 
                     $pageUri = $uri . '/' . Craft::$app->config->general->pageTrigger . $i;
-                    $pageUrl = $baseUrl . $pageUri;
 
-                    $this->addTask($pageUrl, $site->handle);
+                    $this->addTask($pageUri, $site->handle);
                 }
             }
         }
@@ -176,14 +171,14 @@ class CacheService extends Component
     {
         $includes = $this->config['include'] ?? [];
         foreach ($includes as $include) {
-            $this->addTask($include['url'], $include['site']);
+            $this->addTask($include['uri'], $include['site']);
         }
     }
 
-    public function addTask(string $url, string $siteHandle): void
+    public function addTask(string $uri, string $siteHandle): void
     {
         $this->cacheTasks[] = [
-            'url' => $url,
+            'uri' => str_replace('__home__', '', $uri),
             'site' => $siteHandle,
         ];
     }
@@ -204,19 +199,18 @@ class CacheService extends Component
                 $this->trigger(self::EVENT_PROGRESS, $event);
             }
 
-            $this->createFile($task['url'], $task['site']);
+            $this->createFile($task['uri'], $task['site']);
         }
     }
 
-    public function createFile(string $url, string $site): void
+    public function createFile(string $uri, string $site): void
     {
 
-        $uri = str_replace($this->siteBaseUrls[$site], '', $url);
+        $url = $this->siteBaseUrls[$site] . $uri;
 
         try {
             $html = $this->client->get($url)->getBody()->getContents();
         } catch (GuzzleException $e) {
-            $this->errors++;
             // log error with url
             Craft::error($e->getMessage() . ' - ' . $url, 'staticcache');
 
@@ -245,7 +239,6 @@ class CacheService extends Component
 
     private function getCacheFilePath(string $uri, string $site): string
     {
-
         $siteHostPath = $this->siteHostPaths[$site];
 
         // Compose full path for cache file

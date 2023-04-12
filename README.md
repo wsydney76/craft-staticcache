@@ -91,7 +91,6 @@ return [
     // Include non-entry pages
     'include' => [
         [
-            'url' => 'https://staticcache-dev.ddev.site/en/test/cache', 
             'uri' => 'test/cache', 
             'site' => 'en'
         ]
