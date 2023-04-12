@@ -64,16 +64,12 @@ class Plugin extends BasePlugin
 
             $entry = $event->sender;
 
-            if (ElementHelper::isDraftOrRevision($entry)) {
-                return;
-            }
-
-            if (!$entry->scenario === Element::SCENARIO_LIVE) {
+            if ($entry->scenario !== Element::SCENARIO_LIVE) {
                 return;
             }
 
             Craft::$app->getQueue()->push(new UpdateEntryJob([
-                'id' => $entry->id,
+                'id' => $entry->canonicalId,
             ]));
         });
     }

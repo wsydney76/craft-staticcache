@@ -15,6 +15,7 @@ use function ceil;
 use function file_put_contents;
 use function fnmatch;
 use function is_dir;
+use function is_file;
 use function preg_replace;
 use function str_replace;
 
@@ -223,12 +224,25 @@ class CacheService extends Component
 
         $url = $this->siteBaseUrls[$site] . $uri;
 
+        if (!$this->dryrun) {
+            $cacheDirectoryPath = $this->getCacheFilePath($uri, $site);
+
+            $cacheFilePath = $cacheDirectoryPath . '/index.html';
+
+            if (!is_dir($cacheDirectoryPath)) {
+                FileHelper::createDirectory($cacheDirectoryPath, 0777, true);
+            }
+
+            if (is_file($cacheFilePath)) {
+                unlink($cacheFilePath);
+            }
+        }
+
         try {
             $html = $this->client->get($url)->getBody()->getContents();
         } catch (GuzzleException $e) {
             // log error with url
             Craft::error($e->getMessage() . ' - ' . $url, 'staticcache');
-
             return;
         }
 
@@ -237,15 +251,8 @@ class CacheService extends Component
             return;
         }
 
-        $cacheFilePath = $this->getCacheFilePath($uri, $site);
-
-
-        if (!is_dir($cacheFilePath)) {
-            FileHelper::createDirectory($cacheFilePath, 0777, true);
-        }
-
         // write html to file
-        file_put_contents($cacheFilePath . '/index.html', $html);
+        file_put_contents($cacheFilePath, $html);
 
         if ($this->debug) {
             Craft::info('Caching ' . $url, 'staticcache');

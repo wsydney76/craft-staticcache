@@ -16,6 +16,7 @@ class UpdateEntryJob extends BaseJob
 
     function execute($queue): void
     {
+
         $service = Plugin::getInstance()->cacheService;
 
         $entries = Entry::find()
