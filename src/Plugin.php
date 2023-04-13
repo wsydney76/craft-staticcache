@@ -64,13 +64,45 @@ class Plugin extends BasePlugin
 
             $entry = $event->sender;
 
-            if ($entry->scenario !== Element::SCENARIO_LIVE) {
+
+            if (
+                !ElementHelper::isDraftOrRevision($entry) &&
+                !$entry->resaving
+            ) {
+
+                if (!($entry->enabled && $event->sender->getEnabledForSite())) {
+                    $this->cacheService->deleteCacheFile($entry->uri, $entry->site->handle);
+                }
+
+                Craft::$app->getQueue()->push(new UpdateEntryJob([
+                    'id' => $entry->id,
+                ]));
+            }
+        });
+
+        Event::on(Entry::class, Entry::EVENT_BEFORE_DELETE, function(Event $event) {
+            /** @var Entry $entry */
+
+            if (!$this->getSettings()->cachingEnabled || !$this->getSettings()->updateCacheOnSave) {
                 return;
             }
 
-            Craft::$app->getQueue()->push(new UpdateEntryJob([
-                'id' => $entry->canonicalId,
-            ]));
+            $entry = $event->sender;
+
+            if (
+                !ElementHelper::isDraftOrRevision($entry)
+            ) {
+                // Event is not triggered for localized entries, so we need to delete the cache for all locales
+                $entries = Entry::find()
+                    ->id($entry->id)
+                    ->site('*')
+                    ->all();
+
+                foreach ($entries as $localizedEntry) {
+                    $this->cacheService->deleteCacheFile($localizedEntry->uri, $localizedEntry->site->handle);
+                }
+
+            }
         });
     }
 

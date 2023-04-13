@@ -197,6 +197,20 @@ class CacheService extends Component
         ];
     }
 
+    /**
+     * @throws ErrorException
+     */
+    public function deleteCacheFile($uri, $siteHandle)
+    {
+        $this->initService();
+
+        $cacheDirectoryPath = $this->getCacheFilePath($uri, $siteHandle);
+
+        if (is_dir($cacheDirectoryPath)) {
+            FileHelper::removeDirectory($cacheDirectoryPath);
+        }
+    }
+
     public function createFiles(): void
     {
         $count = count($this->cacheTasks);
