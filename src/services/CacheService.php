@@ -6,7 +6,7 @@ use Craft;
 use craft\elements\Entry;
 use craft\helpers\App;
 use GuzzleHttp\Exception\GuzzleException;
-use modules\main\helpers\FileHelper;
+use craft\helpers\FileHelper;
 use wsydney76\staticcache\events\ProgressEvent;
 use wsydney76\staticcache\Plugin;
 use yii\base\Component;
