@@ -10,25 +10,14 @@ use wsydney76\staticcache\Plugin;
 /**
  * Update Entry Job queue job
  */
-class UpdateEntryJob extends BaseJob
+class UpdateEntryCacheJob extends BaseJob
 {
     public int $id;
+    public string $site;
 
     function execute($queue): void
     {
-
-        $service = Plugin::getInstance()->cacheService;
-
-        $entries = Entry::find()
-            ->id($this->id)
-            ->site('*')
-            ->all();
-
-        foreach ($entries as $entry) {
-            $service->createEntryTask($entry);
-        }
-
-        $service->createFiles();
+        Plugin::getInstance()->cacheService->updateEntryCache($this->id, $this->site);
     }
 
     protected function defaultDescription(): ?string

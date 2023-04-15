@@ -8,6 +8,7 @@ use craft\helpers\App;
 use GuzzleHttp\Exception\GuzzleException;
 use craft\helpers\FileHelper;
 use wsydney76\staticcache\events\ProgressEvent;
+use wsydney76\staticcache\events\UpdateEntryCacheEvent;
 use wsydney76\staticcache\Plugin;
 use yii\base\Component;
 use yii\base\ErrorException;
@@ -26,6 +27,7 @@ class CacheService extends Component
 {
 
     const EVENT_PROGRESS = 'progress';
+    const EVENT_UPDATE_ENTRY_CACHE = 'updateEntryCache';
 
     // The Guzzle client
     private $client = null;
@@ -142,16 +144,18 @@ class CacheService extends Component
         $this->addTask($entry->uri, $entry->site->handle);
     }
 
-    public function createPaginationTasks(): void
+    public function createPaginationTasks(array $paginateTasks = null): void
     {
-        $config = $this->config;
-
-        if (!isset($config['paginate'])) {
-            return;
+        if (!$paginateTasks) {
+            $config = $this->config;
+            if (!isset($config['paginateTasks'])) {
+                return;
+            }
+            $paginateTasks = $config['paginateTasks'];
         }
 
-        foreach ($config['paginate'] as $paginatePages) {
-            foreach ($paginatePages['uri'] as $siteHandle => $uri) {
+        foreach ($paginateTasks as $paginateTask) {
+            foreach ($paginateTask['uri'] as $siteHandle => $uri) {
 
                 $site = Craft::$app->getSites()->getSiteByHandle($siteHandle);
                 if (!$site) {
@@ -159,11 +163,11 @@ class CacheService extends Component
                 }
 
                 $query = Entry::find()->site($siteHandle);
-                Craft::configure($query, $paginatePages['criteria']);
+                Craft::configure($query, $paginateTask['criteria']);
 
                 $count = $query->count();
 
-                $perPage = $paginatePages['perPage'] ?? Craft::$app->config->custom->entriesPerPage ?? 10;
+                $perPage = $paginateTask['perPage'] ?? Craft::$app->config->custom->entriesPerPage ?? 10;
 
                 $additionalPages = ceil($count / $perPage) - 1;
 
@@ -304,6 +308,48 @@ class CacheService extends Component
         return $this->countFiles($this->cacheRootPath);
     }
 
+    public function updateEntryCache(int $id, ?string $site = null)
+    {
+        $this->initService();
+
+        $entry = Entry::find()
+            ->id($id)
+            ->site($site)
+            ->status(null)
+            ->one();
+
+
+        if ($entry) {
+            if ($entry->status === Entry::STATUS_LIVE) {
+                $this->addTask($entry->uri, $entry->site->handle);
+            } else {
+                $this->deleteCacheFile($entry->uri, $entry->site->handle);
+            }
+
+            if ($this->hasEventHandlers(self::EVENT_UPDATE_ENTRY_CACHE)) {
+                $event = new UpdateEntryCacheEvent([
+                    'entry' => $entry,
+                ]);
+
+                $this->trigger(self::EVENT_UPDATE_ENTRY_CACHE, $event);
+
+                if ($event->tasks) {
+                    $this->cacheTasks = array_merge($this->cacheTasks, $event->tasks);
+                }
+
+                if ($event->paginateTasks) {
+
+                    foreach ($event->paginateTasks as $paginateTask) {
+                        $this->createPaginationTasks([
+                            $this->config['paginateTasks'][$paginateTask] ?? []
+                        ]);
+                    }
+                }
+            }
+        }
+
+        $this->createFiles();
+    }
 
     private function countFiles($dir): int
     {

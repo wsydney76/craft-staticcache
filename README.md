@@ -99,8 +99,8 @@ return [
     ],    
 
     // Create additional pages for pagination
-    'paginate' => [
-        [
+    'paginateTasks' => [
+        'news' => [
             'criteria' => [
                 'section' => 'news',
             ],
@@ -113,4 +113,16 @@ return [
 ];
 ```
 
+## Events
 
+If the `updateCacheOnSave` setting is enabled, an `UpdateEntryCacheEvent` is fired when an entry is saved.
+
+You can use this event to update the cache for other pages, for example if you have a page with a list of entries.
+
+```php
+
+ $event->tasks[] = ['uri' => 'news', 'site' => $event->entry->site->handle];
+ 
+ $event->paginateTasks = 'news';
+
+```

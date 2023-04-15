@@ -12,7 +12,7 @@ use craft\events\RegisterComponentTypesEvent;
 use craft\helpers\Cp;
 use craft\helpers\ElementHelper;
 use craft\services\Utilities;
-use wsydney76\staticcache\jobs\UpdateEntryJob;
+use wsydney76\staticcache\jobs\UpdateEntryCacheJob;
 use wsydney76\staticcache\models\Settings;
 use wsydney76\staticcache\services\CacheService;
 use wsydney76\staticcache\utilities\StaticcacheUtility;
@@ -74,8 +74,9 @@ class Plugin extends BasePlugin
                     $this->cacheService->deleteCacheFile($entry->uri, $entry->site->handle);
                 }
 
-                Craft::$app->getQueue()->push(new UpdateEntryJob([
+                Craft::$app->getQueue()->push(new UpdateEntryCacheJob([
                     'id' => $entry->id,
+                    'site' => $entry->site->handle,
                 ]));
             }
         });
