@@ -226,6 +226,7 @@ class CacheService extends Component
                     'done' => $i + 1,
                     'total' => $count,
                     'progress' => ($i + 1) / $count,
+                    'label' => ($i + 1) .  '/' . $count
                 ]);
 
                 $this->trigger(self::EVENT_PROGRESS, $event);

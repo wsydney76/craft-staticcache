@@ -18,7 +18,7 @@ class CreateCacheJob extends BaseJob
         $service = Plugin::getInstance()->cacheService;
 
         $service->on(CacheService::EVENT_PROGRESS, function (ProgressEvent $event) use ($queue) {
-            $this->setProgress($queue, $event->progress);
+            $this->setProgress($queue, $event->progress, $event->label);
         });
 
         $service->createCache();

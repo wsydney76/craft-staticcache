@@ -2,7 +2,7 @@
   "name": "wsydney76/craft-staticcache",
   "description": "Create static cache",
   "type": "craft-plugin",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "require": {
     "php": ">=8.0.2",
     "craftcms/cms": "^4.4.0"

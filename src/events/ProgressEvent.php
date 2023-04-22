@@ -9,4 +9,6 @@ class ProgressEvent extends Event
     public int $done;
     public int $total;
     public float $progress;
+
+    public string $label;
 }
