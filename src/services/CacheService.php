@@ -132,6 +132,10 @@ class CacheService extends Component
 
     public function createEntryTask(mixed $entry): void
     {
+        if (!$entry->uri) {
+            return;
+        }
+
         $excludes = $this->excludes[$entry->site->handle] ?? [];
 
         // continue if entry url matches exclude pattern
@@ -193,8 +197,12 @@ class CacheService extends Component
         }
     }
 
-    public function addTask(string $uri, string $siteHandle): void
+    public function addTask(?string $uri, string $siteHandle): void
     {
+        if (!$uri) {
+            return;
+        }
+
         $this->cacheTasks[] = [
             'uri' => str_replace('__home__', '', $uri),
             'site' => $siteHandle,
